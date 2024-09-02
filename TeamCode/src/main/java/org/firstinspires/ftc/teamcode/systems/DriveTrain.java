@@ -1,65 +1,72 @@
 package org.firstinspires.ftc.teamcode.systems;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-
 import com.arcrobotics.ftclib.command.SubsystemBase;
-import com.arcrobotics.ftclib.drivebase.MecanumDrive;
-import com.arcrobotics.ftclib.hardware.motors.Motor;
-import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 public class DriveTrain extends SubsystemBase {
 
-    private MotorEx frontLeft;
-    private MotorEx frontRight;
-    private MotorEx backLeft;
-    private MotorEx backRight;
-    private DistanceSensor distanceSensor;
-    private BNO055IMU gyro;
+    public DcMotorEx frontLeft;
+    public DcMotorEx frontRight;
+    public DcMotorEx backLeft;
+    public DcMotorEx backRight;
+    public DistanceSensor distanceSensor;
+    public BNO055IMU gyro;
+    private LinearOpMode currentOpMode;
+    public double powerMod = 0.9;
+    //    private double detectedDistance = distanceSensor.getDistance(DistanceUnit.CM);
 
-    Gamepad ethan = new Gamepad();
-    Gamepad mica = new Gamepad();
+//    private MecanumDrive drive = new MecanumDrive(frontLeft, frontRight, backLeft, backRight);
+//@Override
+//public void periodic(){
+//
+//}
+
+    public DriveTrain(HardwareMap hardwareMap, LinearOpMode currentOpMode) {
+        this.currentOpMode = currentOpMode;
+        frontLeft = hardwareMap.get(DcMotorEx .class, "frontLeft");
+        frontRight = hardwareMap.get(DcMotorEx.class, "frontRight");
+        backRight= hardwareMap.get(DcMotorEx.class, "backRight");
+        backLeft = hardwareMap.get(DcMotorEx.class, "backLeft");
+        gyro = hardwareMap.get(BNO055IMU .class, "gyro");
+
+        frontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        backRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
 
-    private MecanumDrive drive = new MecanumDrive(frontLeft, frontRight, backLeft, backRight);
+        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-
-    public DriveTrain(HardwareMap hardwareMap, LinearOpMode opMode) {
-
-        frontLeft = hardwareMap.get(MotorEx.class, "frontleft");
-        frontRight = hardwareMap.get(MotorEx.class, "frontRight");
-        backLeft = hardwareMap.get(MotorEx.class, "backRight");
-        backRight = hardwareMap.get(MotorEx.class, "BackLeft");
-        gyro = hardwareMap.get(BNO055IMU.class, "imu");
-        distanceSensor = hardwareMap.get(DistanceSensor.class,"distanceSensor");
-
-        frontLeft.setInverted(false);
-        frontRight.setInverted(true);
-        backLeft.setInverted(false);
-        backRight.setInverted(true);
-
-        frontLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        frontRight.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        initGyro();
     }
 
+    public void initMotorEncoders(){
+        frontLeft.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        frontLeft.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
 
+        frontRight.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
 
-    private double detectedDistance = distanceSensor.getDistance(DistanceUnit.CM);
+        backLeft.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+
+        backRight.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        backRight.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+    }
 
     public void initGyro() {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
@@ -81,17 +88,76 @@ public class DriveTrain extends SubsystemBase {
     }
 
     public void drive(double x, double y, double r) {
-         frontLeft.set((y+x+r));
-         frontRight.set((y-x-r));
-         backRight.set((y-x+r));
-         backLeft.set((y+x-r));
+         frontLeft.setPower((y+x+r));
+         frontRight.setPower((y-x-r));
+         backRight.setPower((y-x+r));
+         backLeft.setPower((y+x-r));
     }
 
+    public void driveFieldCentric(double x, double y, double r){
+        double angle = Math.toRadians(getAngle()) - Math.PI;
+        double adjustedX = x * Math.cos(angle) - y * Math.sin(angle);
+        double adjustedY = x * Math.sin(angle) + y * Math.cos(angle);
+        double[] speeds = {
+                (adjustedX + adjustedY + r),
+                (adjustedX - adjustedY - r),
+                (adjustedX - adjustedY + r),
+                (adjustedX + adjustedY - r)
+        };
+
+        double max = Math.abs(speeds[0]);
+        for(int i = 0; i < speeds.length; i++) {
+            if ( max < Math.abs(speeds[i]) )
+            {
+                max = Math.abs(speeds[i]);
+            }
+        }
+
+        // If the maximum is outside of the range we want it to be,
+        // normalize all the other speeds based on the given speed value.
+        if (max > 1)
+        {
+            for (int i = 0; i < speeds.length; i++)
+            {
+                speeds[i] /= max;
+            }
+        }
 
 
+        frontLeft.setPower(powerMod * (speeds[0]));
+        frontRight.setPower(powerMod * (speeds[1]));
+        backRight.setPower(powerMod * (speeds[2]));
+        backLeft.setPower(powerMod * (speeds[3]));
+    }
 
-    @Override
-    public void periodic() {
-        drive.driveFieldCentric(mica.left_stick_x, mica.left_stick_y, mica.right_stick_x, 0);
+    public void driveForDistanceX(double speed, double distance){
+        double targetAngle = getAngle();
+
+        if(distance > frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
+            double angle = getAngle();
+            double driftPval = 0.001 * (targetAngle - angle);
+            drive(speed, driftPval, 0);
+        } else if(distance < frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
+            drive(0,0,0);
+        }
+    }
+
+    public void driveForDistanceY(double speed, double distance){
+        double targetAngle = getAngle();
+        if(distance > frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
+            double angle = getAngle();
+            double driftPval = 0.001 * (targetAngle - angle);
+            drive(driftPval, speed, 0);
+        } else if(distance < frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
+            drive(0,0,0);
+        }
+    }
+
+    public double ticksToInches(double ticks){
+        return 0.0706667-(0.0000264848 * ticks);
+    }
+
+    public double inchesToTicks(double inches){
+        return (-37757.50619223 * inches) + 2668.19836283;
     }
 }

@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
-
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration;
 import org.firstinspires.ftc.vision.VisionProcessor;
 import org.opencv.core.Core;
@@ -15,7 +14,7 @@ import org.opencv.imgproc.Imgproc;
 
 public class OpenCvProcessor implements VisionProcessor {
 
-    public String output = "BLAAAAA";
+    public Rect frame = new Rect(0,0,0,0);
 
     public Scalar lower = new Scalar(0,0,0);
     public Scalar upper = new Scalar(0,0,0);
@@ -29,10 +28,6 @@ public class OpenCvProcessor implements VisionProcessor {
     public boolean objectDetected = false;
 
     private Point topLeft = new Point(10,0), bottomRight = new Point(40, 20);
-
-    public String getOutput(){
-        return output;
-    }
 
 //    public OpenCvProcessor(Point topleft, Point bottomRight, int pixelThreshold, Scalar upper, Scalar lower){
 //        this.bottomRight = bottomRight;
@@ -81,7 +76,7 @@ public class OpenCvProcessor implements VisionProcessor {
         rectPaint.setStyle(Paint.Style.STROKE);
         rectPaint.setStrokeWidth(scaleCanvasDensity * 4);
 
-//        canvas.drawRect(makeGraphicsRect(rectMiddle, scaleBmpPxToCanvasPx), rectPaint);
-//        canvas.drawRect(makeGraphicsRect(rectSide, scaleBmpPxToCanvasPx), rectPaint);
+       canvas.drawRect(makeGraphicsRect(frame, scaleBmpPxToCanvasPx), rectPaint);
+
     }
 }
