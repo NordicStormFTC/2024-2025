@@ -1,13 +1,16 @@
 package org.firstinspires.ftc.teamcode.systems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.qualcomm.hardware.bosch.BHI260IMU;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -21,9 +24,10 @@ public class DriveTrain extends SubsystemBase {
     public DcMotorEx backLeft;
     public DcMotorEx backRight;
     public DistanceSensor distanceSensor;
-    public BNO055IMU gyro;
+    public BHI260IMU gyro;
     private LinearOpMode currentOpMode;
     public double powerMod = 0.9;
+
     //    private double detectedDistance = distanceSensor.getDistance(DistanceUnit.CM);
 
 //    private MecanumDrive drive = new MecanumDrive(frontLeft, frontRight, backLeft, backRight);
@@ -34,14 +38,15 @@ public class DriveTrain extends SubsystemBase {
 
     public DriveTrain(HardwareMap hardwareMap, LinearOpMode currentOpMode) {
         this.currentOpMode = currentOpMode;
-        frontLeft = hardwareMap.get(DcMotorEx .class, "frontLeft");
-        frontRight = hardwareMap.get(DcMotorEx.class, "frontRight");
-        backRight= hardwareMap.get(DcMotorEx.class, "backRight");
-        backLeft = hardwareMap.get(DcMotorEx.class, "backLeft");
-        gyro = hardwareMap.get(BNO055IMU .class, "gyro");
 
-        frontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontLeft = hardwareMap.get(DcMotorEx .class, "frontleft");
+        frontRight = hardwareMap.get(DcMotorEx.class, "frontright");
+        backRight= hardwareMap.get(DcMotorEx.class, "backright");
+        backLeft = hardwareMap.get(DcMotorEx.class, "backleft");
+        gyro = hardwareMap.get(BHI260IMU.class, "imu");
+
+        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
         backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         backRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
@@ -52,6 +57,7 @@ public class DriveTrain extends SubsystemBase {
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         initGyro();
+        initMotorEncoders();
     }
 
     public void initMotorEncoders(){
@@ -68,30 +74,21 @@ public class DriveTrain extends SubsystemBase {
         backRight.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    public void initGyro() {
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.loggingEnabled = false;
-        parameters.loggingTag = "IMU";
+    public void initGyro(){
+        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
+        RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbFacingDirection);
 
-        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-        // and named "imu".
-        gyro.initialize(parameters);
+        gyro.initialize(new IMU.Parameters(orientationOnRobot));
     }
 
-    private double angAdjust = 0;
-    public double getAngle() {
-        Orientation orients = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        return orients.firstAngle - angAdjust;
-    }
+//    public double referenceAngle = getAngle() - getAngle(); THIS IS THE FREEEKING PROBLEM
 
-    public void drive(double x, double y, double r) {
-         frontLeft.setPower((y+x+r));
-         frontRight.setPower((y-x-r));
-         backRight.setPower((y-x+r));
-         backLeft.setPower((y+x-r));
+    public void drive(double x, double y, double r, double powerMod) {
+         frontLeft.setPower(powerMod * (y+x+r));
+         frontRight.setPower(powerMod * (y-x-r));
+         backRight.setPower(powerMod * (y-x+r));
+         backLeft.setPower(powerMod * (y+x-r));
     }
 
     public void driveFieldCentric(double x, double y, double r){
@@ -136,9 +133,9 @@ public class DriveTrain extends SubsystemBase {
         if(distance > frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
             double angle = getAngle();
             double driftPval = 0.001 * (targetAngle - angle);
-            drive(speed, driftPval, 0);
+            drive(speed, driftPval, 0,1);
         } else if(distance < frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
-            drive(0,0,0);
+            drive(0,0,0,1);
         }
     }
 
@@ -147,9 +144,9 @@ public class DriveTrain extends SubsystemBase {
         if(distance > frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
             double angle = getAngle();
             double driftPval = 0.001 * (targetAngle - angle);
-            drive(driftPval, speed, 0);
+            drive(0, speed, 0,1);
         } else if(distance < frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
-            drive(0,0,0);
+            drive(0,0,0,1);
         }
     }
 
@@ -160,4 +157,10 @@ public class DriveTrain extends SubsystemBase {
     public double inchesToTicks(double inches){
         return (-37757.50619223 * inches) + 2668.19836283;
     }
+
+    public double getAngle() {
+        Orientation orients = gyro.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        return orients.firstAngle;
+    }
+
 }
