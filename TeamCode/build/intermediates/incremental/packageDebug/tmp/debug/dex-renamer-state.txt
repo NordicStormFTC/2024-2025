@@ -1,15 +1,15 @@
-#Sat Sep 28 12:17:03 CDT 2024
-base.0=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeExtDexDebug/classes.dex
-base.1=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeLibDexDebug/11/classes.dex
-base.10=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeExtDexDebug/classes2.dex
-base.2=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeLibDexDebug/8/classes.dex
-base.3=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
-base.4=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeProjectDexDebug/10/classes.dex
-base.5=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeProjectDexDebug/11/classes.dex
-base.6=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeProjectDexDebug/14/classes.dex
-base.7=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeProjectDexDebug/15/classes.dex
-base.8=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeProjectDexDebug/2/classes.dex
-base.9=/Users/alex/Desktop/AndroidStudioProjects/2024-2025/TeamCode/build/intermediates/dex/debug/mergeProjectDexDebug/9/classes.dex
+#Sun Oct 20 18:54:45 CDT 2024
+base.0=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
+base.1=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeLibDexDebug\\11\\classes.dex
+base.10=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes2.dex
+base.2=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeLibDexDebug\\8\\classes.dex
+base.3=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\0\\classes.dex
+base.4=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\10\\classes.dex
+base.5=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\11\\classes.dex
+base.6=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\14\\classes.dex
+base.7=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\15\\classes.dex
+base.8=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\2\\classes.dex
+base.9=C\:\\Users\\Nordic Storm\\StudioProjects\\2024-2025\\TeamCode\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\9\\classes.dex
 path.0=classes.dex
 path.1=11/classes.dex
 path.10=classes2.dex

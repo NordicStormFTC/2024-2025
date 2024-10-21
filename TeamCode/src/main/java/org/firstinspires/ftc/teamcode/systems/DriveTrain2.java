@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.systems;
 
+import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.hardware.bosch.BHI260IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -16,16 +17,37 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-public class DriveTrain2 {
+public class DriveTrain2 extends SubsystemBase {
+
+    @Override
+    public void periodic(){
+        readSensors();
+    }
 
     public DcMotorEx frontLeft;
-    public DcMotorEx frontRight;
+    public DcMotor frontRight;
     public DcMotorEx backLeft;
     public DcMotorEx backRight;
+    public DcMotor yEncoder;
+    public DcMotor xEncoder;
     public DistanceSensor distanceSensor;
     public BHI260IMU gyro;
     private LinearOpMode currentOpMode;
     public double powerMod = 0.9;
+
+    public double TICKS_TO_INCHES;
+
+    public double odometryOffsetX = 0;
+    public double odometryOffsetY = 0;
+    public double angleOffset = 0;
+
+    public double rawAngle;
+    public double rawPosX;
+    public double rawPosY;
+
+    public double rollingPosX;
+    public double rollingPosY;
+    public double rollingAngle;
 
     public DriveTrain2(HardwareMap hardwareMap, OpMode opMode){
         this.currentOpMode = currentOpMode;
@@ -34,13 +56,11 @@ public class DriveTrain2 {
         frontRight = hardwareMap.get(DcMotorEx.class, "frontright");
         backRight= hardwareMap.get(DcMotorEx.class, "backright");
         backLeft = hardwareMap.get(DcMotorEx.class, "backleft");
+
+        yEncoder = hardwareMap.get(DcMotor.class, "YENCODER");
+        xEncoder = hardwareMap.get(DcMotor.class, "XENCODER");
+
         gyro = hardwareMap.get(BHI260IMU.class, "imu");
-
-        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        backLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        backRight.setDirection(DcMotorSimple.Direction.REVERSE);
-
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -49,7 +69,38 @@ public class DriveTrain2 {
 
         initGyro();
         initMotorEncoders();
+    }
 
+    public void readSensors(){
+        rawPosX = xEncoder.getCurrentPosition();
+        rawPosY = yEncoder.getCurrentPosition();
+        rawAngle = getAngle();
+
+        rollingAngle = rawAngle - angleOffset;
+        rollingPosX = rawPosX - odometryOffsetX;
+        rollingPosY = rawPosY - odometryOffsetY;
+    }
+
+    public void resetOdometry(){
+        odometryOffsetX = rawPosX;
+        odometryOffsetY = rawPosY;
+    }
+
+    public void resetGyro(){
+        angleOffset = getAngle();
+    }
+
+    public int[] getPosTicks(){
+        int xPos = xEncoder.getCurrentPosition();
+        int yPos = yEncoder.getCurrentPosition();
+
+        return new int[]{xPos, yPos};
+    }
+
+    public double[] getPosInches(){
+        double xPosInches = getPosTicks()[0] * TICKS_TO_INCHES;
+        double yPosInches = getPosTicks()[1] * TICKS_TO_INCHES;
+        return new double[]{xPosInches, yPosInches};
     }
 
     public void initMotorEncoders(){
@@ -74,15 +125,20 @@ public class DriveTrain2 {
         gyro.initialize(new IMU.Parameters(orientationOnRobot));
     }
 
-    public void drive(double x, double y, double r) {
-        frontLeft.setPower((y+x+r));
-        frontRight.setPower((y-x-r));
-        backRight.setPower((y-x+r));
-        backLeft.setPower((y+x-r));
+    public void drive(double x, double y, double r, double powerMod) {
+        frontLeft.setPower(powerMod * (y + x + r));
+        frontRight.setPower(powerMod * (-y + x +r));
+        backRight.setPower(powerMod * (-y - x + r));
+        backLeft.setPower(powerMod * (y - x + r));
+
     }
 
     public void driveFieldCentric(double x, double y, double r){
-        double angle = Math.toRadians(getAngle()) - Math.PI;
+        double angle = Math.toRadians(getAngle());
+
+        //x' = xcos(theta) - ysin(theta)
+        //y' = xsin(theta) + ycos(theta)
+
         double adjustedX = x * Math.cos(angle) - y * Math.sin(angle);
         double adjustedY = x * Math.sin(angle) + y * Math.cos(angle);
         double[] speeds = {
@@ -117,10 +173,13 @@ public class DriveTrain2 {
         backLeft.setPower(powerMod * (speeds[3]));
     }
 
+    public double ticksToinches(double ticks){
+        return (double) -0.00000482954539 * (ticks * ticks) + 0.0503731 * ticks + 3.15417;
+    }
+
     public double getAngle() {
         Orientation orients = gyro.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         return orients.firstAngle;
     }
-
 
 }
