@@ -1,74 +1,88 @@
 package org.firstinspires.ftc.teamcode.commands;
 
 import com.arcrobotics.ftclib.command.CommandBase;
-import com.qualcomm.robotcore.robocol.Command;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import org.firstinspires.ftc.teamcode.systems.DriveTrain;
-import org.firstinspires.ftc.teamcode.systems.DriveTrain2;
 
 public class DriveForInchesY extends CommandBase {
 
     DriveTrain driveTrain;
-    double target;
-    double power;
-    double error;
+    double yTarget;
+    double ypower;
+    double yError;
+    double xTarget = 0;
+    double xPower;
+    double xError;
     double angularError;
-    double angularOffset = 0;
-    double odoOffset = 0;
+    double xOdoOffset = 0;
+    double yOdoOffset = 0;
     ElapsedTime timer = new ElapsedTime();
     double tolerance;
+    double holdTimeMillis;
+    double yP = 0;
+    double yD = 0;
 
-    public DriveForInchesY(double target, DriveTrain driveTrain){
+    public DriveForInchesY(double inches, DriveTrain driveTrain, double holdTimeMillis){
         this.driveTrain = driveTrain;
-        this.target = target;
+        this.yTarget = inches;
+        yTarget *= 505.4334;
+        this.holdTimeMillis = holdTimeMillis;
 
     }
 
     @Override
     public void initialize() {
-        tolerance = 4;
-        odoOffset = driveTrain.frontLeft.getCurrentPosition();
+        tolerance = 0.12 * driveTrain.TICKS_PER_INCH; // quarter inch tolerance
+        yOdoOffset = driveTrain.backDriveEncoder.getCurrentPosition();
+        xOdoOffset = driveTrain.strafeEncoder.getCurrentPosition();
         driveTrain.resetAngle();
         timer.reset();
     }
 
     @Override
     public void execute() {
-        double rollingPos = driveTrain.frontLeft.getCurrentPosition() - odoOffset;
-        error = target - rollingPos;
+        double yRollingPos = (driveTrain.backDriveEncoder.getCurrentPosition()) - yOdoOffset;
+        yError = yTarget - yRollingPos;
         double acceleration = driveTrain.imu.getAcceleration().xAccel;
 
-        double yP = 0.04 * error;
-        // if you want to drive a long distance, the p term will be very very high,
-        // and subtracting the d term will do nothing to scale the power. If the p term is higher than 1,
-        // we divide it by itself so that the p term can only be a maximum of 1, and the d term will
-        // have a chance to affect the power output
+        if(yError > 25 * driveTrain.TICKS_PER_INCH){
+            yP = 0.00004 * yError;
+            yD = 0.4 * acceleration;
+        }
+        else if(yError > 3 * driveTrain.TICKS_PER_INCH && yError < 25 * driveTrain.TICKS_PER_INCH) {
+            yP = 0.00006 * yError;
+            yD = 0.12 * acceleration;
+        } else if(yError < 3 * driveTrain.TICKS_PER_INCH) {
+            yP = 0.0001 * yError;
+            yD = (0.3 * acceleration);
+        }
+
         if(yP > 1){
             yP /= yP;
         }
-        double yD = 0.01 * acceleration;
-        // this is power for the y direction PID
-        power = yP - yD;
+        ypower = yP - yD; // uses a d term for y axis movement
 
-        // this is the rotation PID
+
         angularError = driveTrain.getAngle();
-        double rP = 0.08 * angularError;
-        double rPower = rP;
-        driveTrain.drive(0,power,rPower,1);
+        double rPower = 0.095 * angularError; // only uses p term
+
+
+        double xRollingPos = driveTrain.strafeEncoder.getCurrentPosition() - xOdoOffset;
+        xError = xTarget - xRollingPos;
+        xPower = 0.00001 * xError; // only uses p term for now
+
+        driveTrain.drive(ypower,xPower,rPower,1);
     }
 
     @Override
     public boolean isFinished() {
-        if(Math.abs(error) < tolerance){
+        if(Math.abs(yError) < tolerance){
             timer.startTime();
-            if(Math.abs(error) > tolerance){
+            if(Math.abs(yError) > tolerance){
                 timer.reset();
             }
         }
-
-
-        return Math.abs(error) < 3 && timer.milliseconds() > 500;
+        return Math.abs(yError) < tolerance && timer.milliseconds() > holdTimeMillis && angularError < 1;
     }
 
     @Override

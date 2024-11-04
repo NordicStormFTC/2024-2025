@@ -8,15 +8,18 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.systems.OpenCV.OpenCvProcessor;
 
 public class DriveTrain extends SubsystemBase {
 
@@ -26,59 +29,51 @@ public class DriveTrain extends SubsystemBase {
     public DcMotorEx backRight;
     public DistanceSensor distanceSensor;
     public BNO055IMU imu;
-    private LinearOpMode currentOpMode;
+
+//    public Servo intake;
+//    public Servo spit;
+
+    public DcMotor frontDriveEncoder;
+    public DcMotor backDriveEncoder;
+    public DcMotor strafeEncoder;
 
     public double powerMod = 1;
 
     public double angleOffset = 0;
     public double rawAngle =0;
 
-    // this is a holder angle for the get angle
-    // function and is never returned by a function
+    public final double TICKS_PER_INCH = 505.4334;
+
     private Orientation lastAngle = new Orientation();
 
-    // this is the actual rolling acumulative angle
     double globalAngle = 0;
 
+    public OpenCvProcessor openCvProcessor = new OpenCvProcessor();
 
-    // the constructor initializes all hardware and the gyroscope
-    // as well as sets the run mode for the motors
     public DriveTrain(HardwareMap hardwareMap, LinearOpMode currentOpMode) {
-        this.currentOpMode = currentOpMode;
 
         frontLeft = hardwareMap.get(DcMotorEx .class, "frontleft");
         frontRight = hardwareMap.get(DcMotorEx.class, "frontright");
         backRight= hardwareMap.get(DcMotorEx.class, "backright");
         backLeft = hardwareMap.get(DcMotorEx.class, "backleft");
+
         imu = hardwareMap.get(BNO055IMU.class, "imu");
 
+//        intake = hardwareMap.get(Servo.class, "intake");
+//        spit = hardwareMap.get(Servo.class, "spit");
 
-        // so the thing is that, one night, mecanum drive just
-        // stoped working, like literaly nothing in the code changed
-        // but the drive config was f***** soo....
-        // yeh it was like 2 weeks of trouble shooting until I set all
-        // all motors to forwards and inverted the power distribution equation
-        // for the motors that should have been set to inverted. see "drive" function.
-        // as evidence this is what the motor config should look like, but like no
-//        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-//        frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
-//        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-//        backRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        // looooooove programming
+        frontDriveEncoder = hardwareMap.get(DcMotor.class, "controlY");
+        backDriveEncoder = hardwareMap.get(DcMotor.class, "expansionY");
+        strafeEncoder = hardwareMap.get(DcMotor.class, "strafe");
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        // these functions seem self explanatory but DM me ig
+
         initGyro();
         initMotorEncoders();
-    }
-
-    public void readSensors(){
-        rawAngle = getAngle();
-//        rollingAngle = rawAngle - angleOffset;
     }
 
     public void initMotorEncoders(){
@@ -104,7 +99,6 @@ public class DriveTrain extends SubsystemBase {
 
     }
 
-    // so this is where the power distribution equation is inverted to make mecanum drive work
     public void drive(double x, double y, double r, double powerMod) {
          frontLeft.setPower(powerMod * (y + x + r));
          frontRight.setPower(powerMod * (-y + x +r));
@@ -112,6 +106,14 @@ public class DriveTrain extends SubsystemBase {
          backLeft.setPower(powerMod * (y - x + r));
 
     }
+
+//    public void drive(double x, double y, double r, double powerMod) {
+//        frontLeft.setPower(powerMod * (y + x + r));
+//        frontRight.setPower(powerMod * (y + x - r));
+//        backRight.setPower(powerMod * (y - x + r));
+//        backLeft.setPower(powerMod * (y - x - r));
+//
+//    }
 
     public void driveFieldCentric(double x, double y, double r, double powerMod){
        // by subtracting PI we just set forwards to the front of the robot
@@ -157,32 +159,6 @@ public class DriveTrain extends SubsystemBase {
         backLeft.setPower(powerMod * (speeds[3]));
     }
 
-    // we do this in a command now
-//    public void driveForDistanceX(double speed, double distance){
-//        double targetAngle = getAngle();
-//
-//        if(distance > frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
-//            double angle = getAngle();
-//            double driftPval = 0.001 * (targetAngle - angle);
-//            drive(speed, driftPval, 0,1);
-//        } else if(distance < frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
-//            drive(0,0,0,1);
-//        }
-//    }
-
-    // we do this in a command now
-//    public void driveForDistanceY(double speed, double distance){
-//        double targetAngle = getAngle();
-//        if(distance > frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
-//            double angle = getAngle();
-//            double driftPval = 0.001 * (targetAngle - angle);
-//            drive(0, speed, 0,1);
-//        } else if(distance < frontLeft.getCurrentPosition() && currentOpMode.opModeIsActive()){
-//            drive(0,0,0,1);
-//        }
-//    }
-
-    // Bogus
     public double ticksToInches(double ticks){
         return 0.0706667-(0.0000264848 * ticks);
     }
@@ -200,15 +176,6 @@ public class DriveTrain extends SubsystemBase {
     }
 
     public double getAngle() {
-
-        //ok so this was like the old way of doing it,
-        // but it only returned a value between 180 and -180 and this was a problem
-//        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-//        Orientation orients = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-//        return orientation.getYaw(AngleUnit.DEGREES);
-
-
-        //so this way returns the actual angle
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         double deltaAngle = angles.firstAngle - lastAngle.firstAngle;

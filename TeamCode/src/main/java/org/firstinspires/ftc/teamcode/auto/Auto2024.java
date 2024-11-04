@@ -1,13 +1,17 @@
 package org.firstinspires.ftc.teamcode.auto;
 
+import android.util.Size;
+
 import com.arcrobotics.ftclib.command.Command;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.commands.Pivot;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.systems.DriveTrain;
-//import org.opencv.core.Size;
+import org.firstinspires.ftc.teamcode.systems.OpenCV.OpenCvProcessor;
+import org.firstinspires.ftc.vision.VisionPortal;
 
 @Autonomous
 
@@ -28,33 +32,36 @@ public class Auto2024 extends LinearOpMode {
     public void schedule(Command... commands){
         CommandScheduler.getInstance().schedule(commands);
     }
-//    private VisionPortal portal;
-//    private OpenCvProcessor processor = new OpenCvProcessor();
+
+   private VisionPortal portal;
 
     @Override
     public void runOpMode() throws InterruptedException {
         DriveTrain driveTrain = new DriveTrain(hardwareMap, this);
-// all this stuff works but the hardware isnt set up rn sooo i justed commented it out while testing commands
-//        portal = new VisionPortal.Builder()
-//                .setCamera(hardwareMap.get(WebcamName.class, "Webcam"))
-//                .addProcessor(processor)
-//                .setCameraResolution(new Size(640, 480))
-//                .setCamera(BuiltinCameraDirection.BACK)
-//                .enableLiveView(true)
-//                .build();
-//        if(processor.objectDetected){
-//            telemetry.addData("Object detected", true);
-//        }
-        reset();
-        schedule(new AutoCommandStack(driveTrain, this));
 
+        portal = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, "Webcam 1"), driveTrain.openCvProcessor);
+
+        if(driveTrain.openCvProcessor.objectDetected){
+            telemetry.addData("Object detected", true);
+        } else {
+            telemetry.addData("no", true);
+
+        }
+        reset();
+
+        telemetry.addData("pixels", driveTrain.openCvProcessor.superstupid);
+        schedule(new AutoCommandStack(driveTrain));
         telemetry.addData("done", true);
         telemetry.update();
         waitForStart();
 
-        while(!isStopRequested() && opModeIsActive()){
+        while( opModeIsActive()){
+            telemetry.addData("avx", driveTrain.openCvProcessor.averageY);
+            telemetry.addData("pixels", driveTrain.openCvProcessor.stupid);
+            telemetry.update();
             run();
         }
+
         reset();
 
     }

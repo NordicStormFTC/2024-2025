@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -23,17 +24,35 @@ import org.firstinspires.ftc.teamcode.systems.DriveTrain2;
 
 public class TeleOp2024 extends LinearOpMode {
 
-
     @Override
     public void runOpMode() throws InterruptedException {
       DriveTrain driveTrain = new DriveTrain(hardwareMap, this);
-        waitForStart();
-        while(opModeIsActive()){
-            if(gamepad1.right_trigger > .6){
-                driveTrain.driveFieldCentric(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x, .4);
+        final double odoOffset = driveTrain.backDriveEncoder.getCurrentPosition();
 
-            } else if(gamepad1.right_trigger < .6)
-            driveTrain.driveFieldCentric(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x, 1);
+                waitForStart();
+        while(opModeIsActive()){
+
+//            driveTrain.intake.setDirection(Servo.Direction.FORWARD);
+//            driveTrain.spit.setDirection(Servo.Direction.FORWARD);
+//
+//            driveTrain.intake.setPosition(-1);
+//            driveTrain.spit.setPosition(-1);
+
+            //driveTrain.spit.setPosition(1);
+            double target = 100;
+            double rollingPos = ( driveTrain.backDriveEncoder.getCurrentPosition()) - odoOffset;
+            double error = target - rollingPos;
+            double velocity = driveTrain.imu.getVelocity().zVeloc;
+            telemetry.addData("error", error);
+            telemetry.addData("rollingPos",rollingPos);
+            telemetry.addData("Vvelocity",velocity);
+            telemetry.update();
+            //driveTrain.drive(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x, 1);
+//            if(gamepad1.right_trigger > .6){
+//                driveTrain.drive(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x, .4);
+//
+//            } else if(gamepad1.right_trigger < .6)
+//            driveTrain.driveFieldCentric(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x, 1);
         }
     }
 

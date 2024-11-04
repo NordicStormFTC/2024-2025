@@ -11,17 +11,11 @@ public class AutoCommandStack extends SequentialCommandGroup {
 
     // this is where we make the singular sequential command to be run by the autonomous.
     // here we add the entire autonomouse command sequence
-    public AutoCommandStack(DriveTrain driveTrain, LinearOpMode opmode){
+    public AutoCommandStack(DriveTrain driveTrain){
         addCommands(
-                new DriveForInchesY(1000, driveTrain),
-                new Pivot(-90, driveTrain, opmode),
-                new DriveForInchesY(1000, driveTrain),
-                new Pivot(-90, driveTrain, opmode),
-                new DriveForInchesY(1000, driveTrain),
-                new Pivot(-90, driveTrain, opmode),
-                new DriveForInchesY(1000, driveTrain)
-
-
+               // new DriveForInchesY(24, driveTrain, 1000)
+                //new Pivot(90, driveTrain)
+               // new DriveForInchesY(-20,driveTrain,300)
                 );
     }
 }

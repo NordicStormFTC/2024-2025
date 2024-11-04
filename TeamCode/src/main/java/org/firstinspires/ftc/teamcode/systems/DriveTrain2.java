@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.systems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.hardware.bosch.BHI260IMU;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -31,9 +32,15 @@ public class DriveTrain2 extends SubsystemBase {
     public DcMotor yEncoder;
     public DcMotor xEncoder;
     public DistanceSensor distanceSensor;
-    public BHI260IMU gyro;
+    public BNO055IMU imu;
     private LinearOpMode currentOpMode;
     public double powerMod = 0.9;
+
+    private Orientation lastAngle = new Orientation();
+
+    // this is the actual rolling accumulative angle
+    double globalAngle = 0;
+
 
     public double TICKS_TO_INCHES;
 
@@ -60,7 +67,7 @@ public class DriveTrain2 extends SubsystemBase {
         yEncoder = hardwareMap.get(DcMotor.class, "YENCODER");
         xEncoder = hardwareMap.get(DcMotor.class, "XENCODER");
 
-        gyro = hardwareMap.get(BHI260IMU.class, "imu");
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -69,6 +76,39 @@ public class DriveTrain2 extends SubsystemBase {
 
         initGyro();
         initMotorEncoders();
+    }
+
+    public void initGyro(){
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.mode = BNO055IMU.SensorMode.IMU;
+        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        imu.initialize(parameters);
+
+    }
+
+    public void resetAngle(){
+        lastAngle = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        globalAngle = 0;
+    }
+
+    public double getAngle() {
+        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        double deltaAngle = angles.firstAngle - lastAngle.firstAngle;
+
+        if(deltaAngle < -180){
+            deltaAngle +=360;
+        } else if(deltaAngle > 180) {
+            deltaAngle -= 360;
+        }
+
+        globalAngle += deltaAngle;
+
+        lastAngle = angles;
+
+        return globalAngle;
     }
 
     public void readSensors(){
@@ -86,9 +126,6 @@ public class DriveTrain2 extends SubsystemBase {
         odometryOffsetY = rawPosY;
     }
 
-    public void resetGyro(){
-        angleOffset = getAngle();
-    }
 
     public int[] getPosTicks(){
         int xPos = xEncoder.getCurrentPosition();
@@ -117,14 +154,6 @@ public class DriveTrain2 extends SubsystemBase {
         backRight.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    public void initGyro(){
-        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
-        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbFacingDirection);
-
-        gyro.initialize(new IMU.Parameters(orientationOnRobot));
-    }
-
     public void drive(double x, double y, double r, double powerMod) {
         frontLeft.setPower(powerMod * (y + x + r));
         frontRight.setPower(powerMod * (-y + x +r));
@@ -132,54 +161,4 @@ public class DriveTrain2 extends SubsystemBase {
         backLeft.setPower(powerMod * (y - x + r));
 
     }
-
-    public void driveFieldCentric(double x, double y, double r){
-        double angle = Math.toRadians(getAngle());
-
-        //x' = xcos(theta) - ysin(theta)
-        //y' = xsin(theta) + ycos(theta)
-
-        double adjustedX = x * Math.cos(angle) - y * Math.sin(angle);
-        double adjustedY = x * Math.sin(angle) + y * Math.cos(angle);
-        double[] speeds = {
-                (adjustedX + adjustedY + r),
-                (adjustedX - adjustedY - r),
-                (adjustedX - adjustedY + r),
-                (adjustedX + adjustedY - r)
-        };
-
-        double max = Math.abs(speeds[0]);
-        for(int i = 0; i < speeds.length; i++) {
-            if ( max < Math.abs(speeds[i]) )
-            {
-                max = Math.abs(speeds[i]);
-            }
-        }
-
-        // If the maximum is outside of the range we want it to be,
-        // normalize all the other speeds based on the given speed value.
-        if (max > 1)
-        {
-            for (int i = 0; i < speeds.length; i++)
-            {
-                speeds[i] /= max;
-            }
-        }
-
-
-        frontLeft.setPower(powerMod * (speeds[0]));
-        frontRight.setPower(powerMod * (speeds[1]));
-        backRight.setPower(powerMod * (speeds[2]));
-        backLeft.setPower(powerMod * (speeds[3]));
-    }
-
-    public double ticksToinches(double ticks){
-        return (double) -0.00000482954539 * (ticks * ticks) + 0.0503731 * ticks + 3.15417;
-    }
-
-    public double getAngle() {
-        Orientation orients = gyro.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        return orients.firstAngle;
-    }
-
 }

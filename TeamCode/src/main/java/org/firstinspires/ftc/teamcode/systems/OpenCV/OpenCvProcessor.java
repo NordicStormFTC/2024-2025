@@ -14,21 +14,32 @@ import org.opencv.imgproc.Imgproc;
 
 public class OpenCvProcessor implements VisionProcessor {
 
-    public Rect frame = new Rect(0,0,0,0);
 
-    public Scalar lower = new Scalar(0,0,0);
-    public Scalar upper = new Scalar(0,0,0);
+    public double stupid=0;
+    public double superstupid =0;
+    public Rect frrame = new Rect(-550,40,400,600);
+    // left really is left bottom is right
+    // rasing top makes the whole rctangle go down
+
+    public Scalar lower = new Scalar(0,0,153);
+    public Scalar upper = new Scalar(255,255,255);
 
     private Mat hsvMat = new Mat();
     private Mat binaryMat = new Mat();
     private Mat unmaskedInputMat = new Mat();
 
-    private int pixelthreshold = 100;
+    private final int pixelthreshold = 0;
 
     public boolean objectDetected = false;
 
-    private Point topLeft = new Point(10,0), bottomRight = new Point(40, 20);
 
+    private Point topLeft = new Point(-550,40), bottomRight = new Point(400, 600);
+
+    public int coloredPixelCount;
+    public int totalX;
+    public int totalY;
+    public double averageX = 0;
+    public double averageY;
 //    public OpenCvProcessor(Point topleft, Point bottomRight, int pixelThreshold, Scalar upper, Scalar lower){
 //        this.bottomRight = bottomRight;
 //        this.topLeft = topleft;
@@ -46,14 +57,20 @@ public class OpenCvProcessor implements VisionProcessor {
         Imgproc.cvtColor(frame, hsvMat, Imgproc.COLOR_RGB2HSV);
         Core.inRange(hsvMat, upper, lower, binaryMat);
 
-        int coloredPixelCount = 0;
+        coloredPixelCount = 0;
         for(int i = (int) topLeft.x; i <= bottomRight.x; i++){
             for(int j = (int) topLeft.y; j <= bottomRight.y; j++){
                 if(binaryMat.get(i, j)[0] == 255) {
+                    totalY += j;
+                    totalX += i;
+
+                    averageY = totalY/j;
+                    averageX = totalX/i;
                     coloredPixelCount++;
                 }
             }
         }
+
         if(coloredPixelCount > pixelthreshold){
             objectDetected = true;
         }
@@ -76,7 +93,25 @@ public class OpenCvProcessor implements VisionProcessor {
         rectPaint.setStyle(Paint.Style.STROKE);
         rectPaint.setStrokeWidth(scaleCanvasDensity * 4);
 
-       canvas.drawRect(makeGraphicsRect(frame, scaleBmpPxToCanvasPx), rectPaint);
+       canvas.drawRect(makeGraphicsRect(frrame, scaleBmpPxToCanvasPx), rectPaint);
 
     }
+
+//    public double[] getAveragePos(){
+//        double[] vals = {0,0};
+//        for(int i = (int) topLeft.x; i <= bottomRight.x; i++){
+//            for(int j = (int) topLeft.y; j <= bottomRight.y; j++){
+//                if(binaryMat.get(i, j)[0] == 255) {
+//                    totalX += i;
+//                    totalY += j;
+//                    averageX = (double) i /totalX;
+//                    averageY = (double) j / totalY;
+//                    vals[0] = averageX;
+//                    vals[1] = averageY;
+//                }
+//            }
+//        }
+//        return vals;
+//    }
+
 }
